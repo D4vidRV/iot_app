@@ -2,6 +2,7 @@ import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:iot_app/presentation/providers/mqtt_state_notifier_provider.dart';
+import 'package:iot_app/presentation/widgets/temperature_chart.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -24,7 +25,7 @@ class _HomeView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final mqttTopic = ref.watch(mqttStreamProvider);
+    final mqttTopic = ref.watch(mqttStremProviderList);
     return Column(
       children: [
         Padding(
@@ -33,18 +34,25 @@ class _HomeView extends ConsumerWidget {
               deviceName: 'DHT22',
               metricWidgets: [
                 _CustomCircularIndicator(
-                  mqttData: mqttTopic.value?.temperature ?? 0.0,
+                  mqttData: mqttTopic.value?.last.temperature ?? 0.0,
                   metricName: 'Temperature',
                   metric: '°C',
                 ),
                 _CustomCircularIndicator(
-                  mqttData: mqttTopic.value?.humidity ?? 0.0,
+                  mqttData: mqttTopic.value?.last.humidity ?? 0.0,
                   metricName: 'Humidity',
                   metric: '%',
                 ),
               ],
               metricName: 'Temperature'),
         ),
+        const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: _DeviceCustomCard(
+              deviceName: 'Temperature in °C',
+              metricName: '',
+              metricWidgets: [TemperatureChart()],
+            )),
       ],
     );
   }

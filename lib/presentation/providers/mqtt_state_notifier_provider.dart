@@ -15,7 +15,8 @@ final mqttProvider = StateNotifierProvider<MqttNotifier, Dht11Data>((ref) {
 
 // StateNotifier para manejar el estado del objeto Dht11Data
 class MqttNotifier extends StateNotifier<Dht11Data> {
-  MqttNotifier() : super(Dht11Data(temperature: 0, humidity: 0));
+  MqttNotifier()
+      : super(Dht11Data(temperature: 0, humidity: 0, date: DateTime.now()));
 
   void updateData(Dht11Data data) {
     state = state.copyWith(
@@ -28,6 +29,7 @@ class MqttNotifier extends StateNotifier<Dht11Data> {
 // Conexión y StreamProvider MQTT
 final mqttStreamProvider = StreamProvider<Dht11Data>((ref) async* {
   final mqttClient = MqttServerClient('192.168.0.120', 'client_flutter');
+  const topic = 'dht11';
 
   mqttClient.logging(on: true);
 
@@ -35,33 +37,85 @@ final mqttStreamProvider = StreamProvider<Dht11Data>((ref) async* {
     await mqttClient.connect('userautomatikos2', 'passautomatikos2');
   } on NoConnectionException catch (e) {
     print('NoConnectionException - $e');
-    throw Exception('Failed to connect to MQTT broker.');
+    // throw Exception('Failed to connect to MQTT broker.');
   } on SocketException catch (e) {
     print('SocketException exception - $e');
-    throw Exception('Failed to connect to MQTT broker.');
+    // throw Exception('Failed to connect to MQTT broker.');
   }
 
   if (mqttClient.connectionStatus!.state == MqttConnectionState.connected) {
     print('Flutter client connected');
+
+    mqttClient.subscribe(topic, MqttQos.atLeastOnce);
   } else {
     print(
         'Flutter client connection failed - disconnecting, status is ${mqttClient.connectionStatus}');
     mqttClient.disconnect();
-    throw Exception('Failed to connect to MQTT broker.');
+    // throw Exception('Failed to connect to MQTT broker.');
+    yield Dht11Data(temperature: 0, humidity: 0, date: DateTime.now());
   }
 
-  const topic = 'dht11';
-  mqttClient.subscribe(topic, MqttQos.atLeastOnce);
+  if (mqttClient.updates == null) {
+    print('mqttClient.updates is null');
+    return;
+  }
 
   await for (final List<MqttReceivedMessage<MqttMessage>> c
       in mqttClient.updates!) {
     final MqttPublishMessage message = c[0].payload as MqttPublishMessage;
     final payloadString =
         MqttPublishPayload.bytesToStringAsString(message.payload.message);
-
     final payloadJson = jsonDecode(payloadString);
     final sensorData = Dht11Data.fromJson(payloadJson);
-
     yield sensorData;
+  }
+});
+
+final mqttStremProviderList = StreamProvider<List<Dht11Data>>((ref) async* {
+  final mqttClient = MqttServerClient('192.168.0.120', 'client_flutter');
+  const topic = 'dht11';
+  List<Dht11Data> dataList = [];
+
+  mqttClient.logging(on: true);
+
+  try {
+    await mqttClient.connect('userautomatikos2', 'passautomatikos2');
+  } on NoConnectionException catch (e) {
+    print('NoConnectionException - $e');
+    // throw Exception('Failed to connect to MQTT broker.');
+  } on SocketException catch (e) {
+    print('SocketException exception - $e');
+    // throw Exception('Failed to connect to MQTT broker.');
+  }
+
+  if (mqttClient.connectionStatus!.state == MqttConnectionState.connected) {
+    print('Flutter client connected');
+
+    mqttClient.subscribe(topic, MqttQos.atLeastOnce);
+  } else {
+    print(
+        'Flutter client connection failed - disconnecting, status is ${mqttClient.connectionStatus}');
+    mqttClient.disconnect();
+    // throw Exception('Failed to connect to MQTT broker.');
+    yield dataList;
+  }
+
+  if (mqttClient.updates == null) {
+    print('mqttClient.updates is null');
+    return;
+  }
+
+  await for (final List<MqttReceivedMessage<MqttMessage>> c
+      in mqttClient.updates!) {
+    final MqttPublishMessage message = c[0].payload as MqttPublishMessage;
+    final payloadString =
+        MqttPublishPayload.bytesToStringAsString(message.payload.message);
+    final payloadJson = jsonDecode(payloadString);
+    final sensorData = Dht11Data.fromJson(payloadJson);
+    dataList.add(sensorData);
+    if (dataList.length > 5) {
+      dataList.removeAt(0);
+    }
+    yield dataList;
   }
 });
