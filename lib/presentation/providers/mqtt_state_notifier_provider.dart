@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:iot_app/domain/models/dht11_data.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 // Proveedor del StateNotifier
 final mqttProvider = StateNotifierProvider<MqttNotifier, Dht11Data>((ref) {
@@ -28,8 +29,9 @@ class MqttNotifier extends StateNotifier<Dht11Data> {
 
 // Conexión y StreamProvider MQTT
 final mqttStreamProvider = StreamProvider<Dht11Data>((ref) async* {
-  final mqttClient = MqttServerClient('192.168.0.120', 'client_flutter');
-  const topic = 'dht11';
+  final mqttClient =
+      MqttServerClient(dotenv.env['MQTT_BROKER'] ?? '', 'client_flutter');
+  final topic = dotenv.env['TOPIC'] ?? '';
 
   mqttClient.logging(on: true);
 
@@ -72,8 +74,9 @@ final mqttStreamProvider = StreamProvider<Dht11Data>((ref) async* {
 });
 
 final mqttStremProviderList = StreamProvider<List<Dht11Data>>((ref) async* {
-  final mqttClient = MqttServerClient('192.168.0.120', 'client_flutter');
-  const topic = 'dht11';
+  final mqttClient =
+      MqttServerClient(dotenv.env['MQTT_BROKER'] ?? '', 'client_flutter');
+  final topic = dotenv.env['TOPIC'] ?? 'test';
   List<Dht11Data> dataList = [];
 
   mqttClient.logging(on: true);

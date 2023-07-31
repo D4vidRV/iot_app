@@ -98,15 +98,15 @@ class _CustomCircularIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 180,
-      height: 180,
+      width: 160,
+      height: 160,
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Stack(
           children: [
             SizedBox(
-              width: 180,
-              height: 180,
+              width: 160,
+              height: 160,
               child: FadeInLeft(
                 child: CircularProgressIndicator(
                   value: mqttData / 100,
